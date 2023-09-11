@@ -13,7 +13,7 @@ namespace Dalamud.Game.Config;
 /// </summary>
 [InterfaceVersion("1.0")]
 [ServiceManager.EarlyLoadedService]
-public sealed class GameConfig : IServiceType, IGameConfig, IDisposable
+internal sealed class GameConfig : IServiceType, IGameConfig, IDisposable
 {
     private readonly GameConfigAddressResolver address = new();
     private Hook<ConfigChangeDelegate>? configChangeHook;
