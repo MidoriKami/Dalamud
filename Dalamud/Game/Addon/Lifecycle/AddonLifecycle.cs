@@ -30,7 +30,7 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
     private readonly AddonLifecyclePooledArgs argsPool = Service<AddonLifecyclePooledArgs>.Get();
 
     private readonly nint disallowedReceiveEventAddress;
-    
+
     private readonly AddonLifecycleAddressResolver address;
     private readonly AddonSetupHook<AtkUnitBase.Delegates.OnSetup> onAddonSetupHook;
     private readonly Hook<AddonFinalizeDelegate> onAddonFinalizeHook;
@@ -38,6 +38,8 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
     private readonly CallHook<AtkUnitBase.Delegates.Update> onAddonUpdateHook;
     private readonly Hook<AtkUnitManager.Delegates.RefreshAddon> onAddonRefreshHook;
     private readonly CallHook<AtkUnitBase.Delegates.OnRequestedUpdate> onAddonRequestedUpdateHook;
+    private readonly Hook<AddonShowDelegate> onAddonShowHook;
+    private readonly Hook<AddonHideDelegate> onAddonHideHook;
 
     [ServiceManager.ServiceConstructor]
     private AddonLifecycle(TargetSigScanner sigScanner)
@@ -55,6 +57,8 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
         this.onAddonUpdateHook = new CallHook<AtkUnitBase.Delegates.Update>(this.address.AddonUpdate, this.OnAddonUpdate);
         this.onAddonRefreshHook = Hook<AtkUnitManager.Delegates.RefreshAddon>.FromAddress(refreshAddonAddress, this.OnAddonRefresh);
         this.onAddonRequestedUpdateHook = new CallHook<AtkUnitBase.Delegates.OnRequestedUpdate>(this.address.AddonOnRequestedUpdate, this.OnRequestedUpdate);
+        this.onAddonShowHook = Hook<AddonShowDelegate>.FromAddress(this.address.ShowAddon, this.OnAddonShow);
+        this.onAddonHideHook = Hook<AddonHideDelegate>.FromAddress(this.address.HideAddon, this.OnAddonHide);
 
         this.onAddonSetupHook.Enable();
         this.onAddonFinalizeHook.Enable();
@@ -62,19 +66,25 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
         this.onAddonUpdateHook.Enable();
         this.onAddonRefreshHook.Enable();
         this.onAddonRequestedUpdateHook.Enable();
+        this.onAddonShowHook.Enable();
+        this.onAddonHideHook.Enable();
     }
 
     private delegate void AddonFinalizeDelegate(AtkUnitManager* unitManager, AtkUnitBase** atkUnitBase);
 
+    private delegate void AddonShowDelegate(AtkUnitBase* addon, bool suppressOpenSfx, int unsetShowHideFlags);
+
+    private delegate void AddonHideDelegate(AtkUnitBase* addon, bool suppressCloseTransition, bool fireCloseCallback, int setShowHideFlags);
+
     /// <summary>
     /// Gets a list of all AddonLifecycle ReceiveEvent Listener Hooks.
     /// </summary>
-    internal List<AddonLifecycleReceiveEventListener> ReceiveEventListeners { get; } = new();
-    
+    internal List<AddonLifecycleReceiveEventListener> ReceiveEventListeners { get; } = [];
+
     /// <summary>
     /// Gets a list of all AddonLifecycle Event Listeners.
     /// </summary>
-    internal List<AddonLifecycleEventListener> EventListeners { get; } = new();
+    internal List<AddonLifecycleEventListener> EventListeners { get; } = [];
 
     /// <inheritdoc/>
     void IInternalDisposableService.DisposeService()
@@ -85,6 +95,8 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
         this.onAddonUpdateHook.Dispose();
         this.onAddonRefreshHook.Dispose();
         this.onAddonRequestedUpdateHook.Dispose();
+        this.onAddonShowHook.Dispose();
+        this.onAddonHideHook.Dispose();
 
         foreach (var receiveEventListener in this.ReceiveEventListeners)
         {
@@ -101,7 +113,7 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
         this.framework.RunOnTick(() =>
         {
             this.EventListeners.Add(listener);
-            
+
             // If we want receive event messages have an already active addon, enable the receive event hook.
             // If the addon isn't active yet, we'll grab the hook when it sets up.
             if (listener is { EventType: AddonEvent.PreReceiveEvent or AddonEvent.PostReceiveEvent })
@@ -122,11 +134,11 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
     {
         // Set removed state to true immediately, then lazily remove it from the EventListeners list on next Framework Update.
         listener.Removed = true;
-        
+
         this.framework.RunOnTick(() =>
         {
             this.EventListeners.Remove(listener);
-            
+
             // If we are disabling an ReceiveEvent listener, check if we should disable the hook.
             if (listener is { EventType: AddonEvent.PreReceiveEvent or AddonEvent.PostReceiveEvent })
             {
@@ -160,7 +172,7 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
             // If the listener is pending removal, and is waiting until the next Framework Update, don't invoke listener.
             if (listener.Removed)
                 continue;
-            
+
             // Match on string.empty for listeners that want events for all addons.
             if (!string.IsNullOrWhiteSpace(listener.AddonName) && !args.IsAddon(listener.AddonName))
                 continue;
@@ -372,6 +384,33 @@ internal unsafe class AddonLifecycle : IInternalDisposableService
 
         this.InvokeListenersSafely(AddonEvent.PostRequestedUpdate, arg);
     }
+
+    private void OnAddonShow(AtkUnitBase* addon, bool suppressOpenSfx, int unsetShowHideFlags)
+    {
+        this.onAddonShowHook.Original(addon, suppressOpenSfx, unsetShowHideFlags);
+
+        using var returner = this.argsPool.Rent(out AddonShowArgs arg);
+        arg.Clear();
+        arg.Addon = (nint)addon;
+        arg.SilenceOpenSoundEffect = suppressOpenSfx;
+        arg.UnsetShowHideFlags = unsetShowHideFlags;
+
+        this.InvokeListenersSafely(AddonEvent.Show, arg);
+    }
+
+    private void OnAddonHide(AtkUnitBase* addon, bool disableCloseTransition, bool fireCloseCallback, int setShowHideFlags)
+    {
+        this.onAddonHideHook!.Original(addon, disableCloseTransition, fireCloseCallback, setShowHideFlags);
+
+        using var returner = this.argsPool.Rent(out AddonHideArgs arg);
+        arg.Clear();
+        arg.Addon = (nint)addon;
+        arg.DisableCloseTransition = disableCloseTransition;
+        arg.TriggerCloseHideCallback = fireCloseCallback;
+        arg.SetShowHideFlags = setShowHideFlags;
+
+        this.InvokeListenersSafely(AddonEvent.Hide, arg);
+    }
 }
 
 /// <summary>
@@ -387,7 +426,7 @@ internal class AddonLifecyclePluginScoped : IInternalDisposableService, IAddonLi
     [ServiceManager.ServiceDependency]
     private readonly AddonLifecycle addonLifecycleService = Service<AddonLifecycle>.Get();
 
-    private readonly List<AddonLifecycleEventListener> eventListeners = new();
+    private readonly List<AddonLifecycleEventListener> eventListeners = [];
 
     /// <inheritdoc/>
     void IInternalDisposableService.DisposeService()
@@ -458,7 +497,7 @@ internal class AddonLifecyclePluginScoped : IInternalDisposableService, IAddonLi
             this.eventListeners.RemoveAll(entry =>
             {
                 if (entry.FunctionDelegate != handler) return false;
-            
+
                 this.addonLifecycleService.UnregisterListener(entry);
                 return true;
             });

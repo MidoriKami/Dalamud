@@ -46,9 +46,9 @@ public class AddonReceiveEventArgs : AddonArgs, ICloneable
     internal override void Clear()
     {
         base.Clear();
-        this.AtkEventType = default;
-        this.EventParam = default;
-        this.AtkEvent = default;
-        this.Data = default;
+        this.AtkEventType = 0;
+        this.EventParam = 0;
+        this.AtkEvent = 0;
+        this.Data = 0;
     }
 }

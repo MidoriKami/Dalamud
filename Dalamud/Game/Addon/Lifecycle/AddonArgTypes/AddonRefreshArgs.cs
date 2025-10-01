@@ -43,7 +43,7 @@ public class AddonRefreshArgs : AddonArgs, ICloneable
     internal override void Clear()
     {
         base.Clear();
-        this.AtkValueCount = default;
-        this.AtkValues = default;
+        this.AtkValueCount = 0;
+        this.AtkValues = 0;
     }
 }

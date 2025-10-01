@@ -36,7 +36,7 @@ public class AddonRequestedUpdateArgs : AddonArgs, ICloneable
     internal override void Clear()
     {
         base.Clear();
-        this.NumberArrayData = default;
-        this.StringArrayData = default;
+        this.NumberArrayData = 0;
+        this.StringArrayData = 0;
     }
 }

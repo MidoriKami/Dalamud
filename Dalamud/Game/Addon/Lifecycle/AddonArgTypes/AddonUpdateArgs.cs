@@ -40,6 +40,6 @@ public class AddonUpdateArgs : AddonArgs, ICloneable
     internal override void Clear()
     {
         base.Clear();
-        this.TimeDeltaInternal = default;
+        this.TimeDeltaInternal = 0;
     }
 }

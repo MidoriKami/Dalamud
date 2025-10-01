@@ -16,6 +16,8 @@ internal sealed class AddonLifecyclePooledArgs : IServiceType
     private readonly AddonRefreshArgs?[] addonRefreshArgPool = new AddonRefreshArgs?[64];
     private readonly AddonRequestedUpdateArgs?[] addonRequestedUpdateArgPool = new AddonRequestedUpdateArgs?[64];
     private readonly AddonReceiveEventArgs?[] addonReceiveEventArgPool = new AddonReceiveEventArgs?[64];
+    private readonly AddonShowArgs?[] addonShowArgPool = new AddonShowArgs?[64];
+    private readonly AddonHideArgs?[] addonHideArgPool = new AddonHideArgs?[64];
 
     [ServiceManager.ServiceConstructor]
     private AddonLifecyclePooledArgs()
@@ -26,31 +28,36 @@ internal sealed class AddonLifecyclePooledArgs : IServiceType
     /// <param name="arg">The rented instance.</param>
     /// <returns>The returner.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PooledEntry<AddonSetupArgs> Rent(out AddonSetupArgs arg) => new(out arg, this.addonSetupArgPool);
+    public PooledEntry<AddonSetupArgs> Rent(out AddonSetupArgs arg)
+        => new(out arg, this.addonSetupArgPool);
 
     /// <summary>Rents an instance of an argument.</summary>
     /// <param name="arg">The rented instance.</param>
     /// <returns>The returner.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PooledEntry<AddonFinalizeArgs> Rent(out AddonFinalizeArgs arg) => new(out arg, this.addonFinalizeArgPool);
+    public PooledEntry<AddonFinalizeArgs> Rent(out AddonFinalizeArgs arg)
+        => new(out arg, this.addonFinalizeArgPool);
 
     /// <summary>Rents an instance of an argument.</summary>
     /// <param name="arg">The rented instance.</param>
     /// <returns>The returner.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PooledEntry<AddonDrawArgs> Rent(out AddonDrawArgs arg) => new(out arg, this.addonDrawArgPool);
+    public PooledEntry<AddonDrawArgs> Rent(out AddonDrawArgs arg)
+        => new(out arg, this.addonDrawArgPool);
 
     /// <summary>Rents an instance of an argument.</summary>
     /// <param name="arg">The rented instance.</param>
     /// <returns>The returner.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PooledEntry<AddonUpdateArgs> Rent(out AddonUpdateArgs arg) => new(out arg, this.addonUpdateArgPool);
+    public PooledEntry<AddonUpdateArgs> Rent(out AddonUpdateArgs arg)
+        => new(out arg, this.addonUpdateArgPool);
 
     /// <summary>Rents an instance of an argument.</summary>
     /// <param name="arg">The rented instance.</param>
     /// <returns>The returner.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public PooledEntry<AddonRefreshArgs> Rent(out AddonRefreshArgs arg) => new(out arg, this.addonRefreshArgPool);
+    public PooledEntry<AddonRefreshArgs> Rent(out AddonRefreshArgs arg)
+        => new(out arg, this.addonRefreshArgPool);
 
     /// <summary>Rents an instance of an argument.</summary>
     /// <param name="arg">The rented instance.</param>
@@ -65,6 +72,20 @@ internal sealed class AddonLifecyclePooledArgs : IServiceType
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public PooledEntry<AddonReceiveEventArgs> Rent(out AddonReceiveEventArgs arg) =>
         new(out arg, this.addonReceiveEventArgPool);
+
+    /// <summary>Rents an instance of an argument.</summary>
+    /// <param name="arg">The rented instance.</param>
+    /// <returns>The returner.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PooledEntry<AddonShowArgs> Rent(out AddonShowArgs arg) =>
+        new(out arg, this.addonShowArgPool);
+
+    /// <summary>Rents an instance of an argument.</summary>
+    /// <param name="arg">The rented instance.</param>
+    /// <returns>The returner.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PooledEntry<AddonHideArgs> Rent(out AddonHideArgs arg) =>
+        new(out arg, this.addonHideArgPool);
 
     /// <summary>Returns the object to the pool on dispose.</summary>
     /// <typeparam name="T">The type.</typeparam>

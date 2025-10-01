@@ -16,7 +16,7 @@ public enum AddonEvent
     /// </summary>
     /// <seealso cref="AddonSetupArgs"/>
     PreSetup,
-    
+
     /// <summary>
     /// An event that is fired after an addon has finished its initial setup. This event is particularly useful for
     /// developers seeking to add custom elements to now-initialized and populated node lists, as well as reading data
@@ -64,7 +64,7 @@ public enum AddonEvent
     /// </remarks>
     /// <seealso cref="AddonFinalizeArgs"/>
     PreFinalize,
-    
+
     /// <summary>
     /// An event that is fired before a call to <see cref="AtkUnitBase.OnRequestedUpdate"/> is made in response to a
     /// change in the subscribed <see cref="AddonRequestedUpdateArgs.NumberArrayData"/> or
@@ -81,13 +81,13 @@ public enum AddonEvent
     /// to the Free Company's overview.
     /// </example>
     PreRequestedUpdate,
-    
+
     /// <summary>
     /// An event that is fired after an addon has finished processing an <c>ArrayData</c> update.
     /// See <see cref="PreRequestedUpdate"/> for more information.
     /// </summary>
     PostRequestedUpdate,
-    
+
     /// <summary>
     /// An event that is fired before an addon calls its <see cref="AtkUnitManager.RefreshAddon"/> method. Refreshes are
     /// generally triggered in response to certain user interactions such as changing tabs, and are primarily used to
@@ -96,13 +96,13 @@ public enum AddonEvent
     /// <seealso cref="AddonRefreshArgs"/>
     /// <seealso cref="PostRefresh"/>
     PreRefresh,
-    
+
     /// <summary>
     /// An event that is fired after an addon has finished its refresh.
     /// See <see cref="PreRefresh"/> for more information.
     /// </summary>
     PostRefresh,
-    
+
     /// <summary>
     /// An event that is fired before an addon begins processing a user-driven event via
     /// <see cref="AtkEventListener.ReceiveEvent"/>, such as mousing over an element or clicking a button. This event
@@ -112,10 +112,22 @@ public enum AddonEvent
     /// <seealso cref="AddonReceiveEventArgs"/>
     /// <seealso cref="PostReceiveEvent"/>
     PreReceiveEvent,
-    
+
     /// <summary>
     /// An event that is fired after an addon finishes calling its <see cref="AtkEventListener.ReceiveEvent"/> method.
     /// See <see cref="PreReceiveEvent"/> for more information.
     /// </summary>
     PostReceiveEvent,
+
+    /// <summary>
+    /// An event that is fired when an addon is showing.
+    /// </summary>
+    /// <remarks>Note: The specific timing within an addons AtkUnitBase.Show call is not defined.</remarks>
+    Show,
+
+    /// <summary>
+    /// An event that is fired when an addon is hiding.
+    /// </summary>
+    /// <remarks>Note: The specific timing within an addons AtkUnitBase.Hide call is not defined.</remarks>
+    Hide,
 }
