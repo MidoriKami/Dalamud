@@ -9,7 +9,6 @@ using Dalamud.Logging.Internal;
 using Dalamud.Plugin.Internal.Types;
 using Dalamud.Plugin.Services;
 
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace Dalamud.Game.Addon.Events;
@@ -32,8 +31,7 @@ internal unsafe class AddonEventManager : IInternalDisposableService
 
     private readonly AddonLifecycleEventListener finalizeEventListener;
 
-    private readonly AddonEventManagerAddressResolver address;
-    private readonly Hook<UpdateCursorDelegate> onUpdateCursor;
+    private readonly Hook<AtkUnitManager.Delegates.UpdateCursor> onUpdateCursor;
 
     private readonly ConcurrentDictionary<Guid, PluginEventController> pluginEventControllers;
 
@@ -42,23 +40,18 @@ internal unsafe class AddonEventManager : IInternalDisposableService
     [ServiceManager.ServiceConstructor]
     private AddonEventManager(TargetSigScanner sigScanner)
     {
-        this.address = new AddonEventManagerAddressResolver();
-        this.address.Setup(sigScanner);
-
         this.pluginEventControllers = new ConcurrentDictionary<Guid, PluginEventController>();
         this.pluginEventControllers.TryAdd(DalamudInternalKey, new PluginEventController());
 
         this.cursorOverride = null;
 
-        this.onUpdateCursor = Hook<UpdateCursorDelegate>.FromAddress(this.address.UpdateCursor, this.UpdateCursorDetour);
+        this.onUpdateCursor = Hook<AtkUnitManager.Delegates.UpdateCursor>.FromAddress(AtkUnitManager.Addresses.UpdateCursor.Value, this.UpdateCursorDetour);
 
         this.finalizeEventListener = new AddonLifecycleEventListener(AddonEvent.PreFinalize, string.Empty, this.OnAddonFinalize);
         this.addonLifecycle.RegisterListener(this.finalizeEventListener);
 
         this.onUpdateCursor.Enable();
     }
-
-    private delegate nint UpdateCursorDelegate(RaptureAtkModule* module);
 
     /// <inheritdoc/>
     void IInternalDisposableService.DisposeService()
@@ -168,7 +161,7 @@ internal unsafe class AddonEventManager : IInternalDisposableService
         }
     }
 
-    private nint UpdateCursorDetour(RaptureAtkModule* module)
+    private void UpdateCursorDetour(AtkUnitManager* thisPtr)
     {
         try
         {
@@ -179,10 +172,10 @@ internal unsafe class AddonEventManager : IInternalDisposableService
                 var cursor = (AddonCursorType)atkStage->AtkCursor.Type;
                 if (cursor != this.cursorOverride)
                 {
-                    AtkStage.Instance()->AtkCursor.SetCursorType((AtkCursor.CursorType)this.cursorOverride, 1);
+                    atkStage->AtkCursor.SetCursorType((AtkCursor.CursorType)this.cursorOverride, 1);
                 }
 
-                return nint.Zero;
+                return;
             }
         }
         catch (Exception e)
@@ -190,7 +183,7 @@ internal unsafe class AddonEventManager : IInternalDisposableService
             Log.Error(e, "Exception in UpdateCursorDetour.");
         }
 
-        return this.onUpdateCursor!.Original(module);
+        this.onUpdateCursor!.Original(thisPtr);
     }
 }
 
